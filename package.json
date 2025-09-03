@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon --exec \"npx tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx",
-    "build": "next build",
-    "start": "NODE_ENV=production tsx server.ts 2>&1 | tee server.log",
+     "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "postinstall": "prisma generate"
     "lint": "next lint",
     "setup": "npm install && npm run db:generate && npm run db:push && (npm run db:seed || echo 'Database already seeded')",
     "db:push": "prisma db push",
