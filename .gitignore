@@ -1,0 +1,10 @@
+node_modules
+.env
+*.log
+
+.next
+
+
+/src/generated/prisma
+
+/src/generated/prisma

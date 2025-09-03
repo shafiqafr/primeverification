@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id              String   @id @default(cuid())
+  employeeId      String   @unique
+  fullName        String
+  department      String
+  region          String?
+  email           String?
+  dateOfBirth     DateTime
+  phoneNumber     String
+  whatsappNumber  String?
+  bloodGroup      String
+  profilePicture  String?
+  status          EmployeeStatus @default(ACTIVE)
+  issueDate       DateTime
+  expiryDate      DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  verificationLogs VerificationLog[]
+}
+
+model VerificationLog {
+  id         String   @id @default(cuid())
+  employeeId String
+  ipAddress  String
+  userAgent  String?
+  timestamp  DateTime @default(now())
+  
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      AdminRole @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Settings {
+  id              String   @id @default(cuid())
+  companyName     String
+  companyAddress  String
+  companyPhone    String
+  companyEmail    String
+  companyLogo     String?
+  timezone        String   @default("Asia/Karachi")
+  language        String   @default("en")
+  theme           String   @default("light")
+  emailNotifications Boolean @default(true)
+  pushNotifications Boolean @default(true)
+  smsNotifications   Boolean @default(false)
+  dataRetention   Int      @default(365)
+  backupEnabled   Boolean  @default(true)
+  backupFrequency String   @default("daily")
+  qrExpiryDays    Int      @default(365)
+  defaultDepartment String @default("Human Resources")
+  autoGenerateEmployeeId Boolean @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AdminRole {
+  ADMIN
+  HR
+}
