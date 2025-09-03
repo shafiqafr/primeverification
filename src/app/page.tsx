@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { QrCode, Search, User, Building, Calendar, Phone, Droplets, Badge, CheckCircle, XCircle, Camera, Shield, MessageCircle, Lock, MapPin, Mail, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+// Employee Interface
 interface Employee {
   id: string;
   employeeId: string;
@@ -27,7 +28,16 @@ interface Employee {
   expiryDate: string;
 }
 
-// QR Scanner Component
+// Company Settings Interface
+interface CompanySettings {
+  companyName: string;
+  companyAddress: string;
+  companyPhone: string;
+  companyEmail: string;
+  companyLogo?: string | null;
+}
+
+// QR Scanner Component (no changes needed here)
 function QRScanner({ onScan, onError }: { onScan: (data: string) => void; onError: (error: string) => void }) {
   const [hasCamera, setHasCamera] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -40,6 +50,7 @@ function QRScanner({ onScan, onError }: { onScan: (data: string) => void; onErro
 
   const startScanning = () => {
     setIsScanning(true);
+    // This part is for mock scanning, it's fine for now.
     setTimeout(() => {
       const mockQRData = 'https://primesteel.com/verify?employee=EMP001';
       onScan(mockQRData);
@@ -51,7 +62,7 @@ function QRScanner({ onScan, onError }: { onScan: (data: string) => void; onErro
     return (
       <div className="text-center p-6 bg-red-50 rounded-lg border border-red-200">
         <Camera className="w-12 h-12 text-red-500 mx-auto mb-3" />
-        <p className="text-red-700 font-medium">Camera not available on this device</p>
+        <p className="text-red-700 font-medium">Camera is not available on this device</p>
         <p className="text-red-600 text-sm mt-1">Please use manual entry instead</p>
       </div>
     );
@@ -65,14 +76,14 @@ function QRScanner({ onScan, onError }: { onScan: (data: string) => void; onErro
             <Camera className="w-10 h-10 text-blue-600" />
           </div>
           <p className="text-gray-600 text-lg">
-            Click the button below to scan QR code with your camera
+            QR code scan karne ke liye niche diye gaye button par click karein.
           </p>
           <Button 
             onClick={startScanning}
             className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg shadow-lg"
           >
             <Camera className="w-5 h-5 mr-2" />
-            Start Camera Scan
+            Camera Scan shuru karein
           </Button>
         </div>
       ) : (
@@ -81,14 +92,14 @@ function QRScanner({ onScan, onError }: { onScan: (data: string) => void; onErro
             <div className="w-full h-[400px] flex items-center justify-center bg-gray-900">
               <div className="text-center text-white">
                 <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-400 mx-auto mb-4"></div>
-                <p className="text-lg font-medium">Scanning QR Code...</p>
-                <p className="text-sm text-gray-300 mt-2">Please position QR code in front of camera</p>
+                <p className="text-lg font-medium">QR code scan ho raha hai...</p>
+                <p className="text-sm text-gray-300 mt-2">QR code ko camera ke saamne rakhein.</p>
               </div>
             </div>
           </div>
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
-              Position the QR code within the frame to scan
+              QR code ko frame ke andar rakhein scan karne ke liye.
             </p>
             <div className="flex justify-center gap-2">
               <Button 
@@ -96,14 +107,14 @@ function QRScanner({ onScan, onError }: { onScan: (data: string) => void; onErro
                 variant="outline"
                 className="px-6 py-2 border-2 border-red-300 text-red-600 hover:bg-red-50 rounded-lg"
               >
-                Stop Camera
+                Camera rokein
               </Button>
               <Button 
                 onClick={startScanning}
                 variant="outline"
                 className="px-6 py-2 border-2 border-blue-300 text-blue-600 hover:bg-blue-50 rounded-lg"
               >
-                Retry Camera
+                Dobara koshish karein
               </Button>
             </div>
           </div>
@@ -113,88 +124,31 @@ function QRScanner({ onScan, onError }: { onScan: (data: string) => void; onErro
   );
 }
 
-// QR Code Generator Component
+// QR Code Generator Component (no changes needed here)
 function QRCodeGenerator({ value, size = 128, className = '' }: { value: string; size?: number; className?: string }) {
+  const base64SVG = btoa(`
+    <svg width="${size}" height="${size}" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="white"/>
+      <g fill="black">
+        <rect x="10" y="10" width="20" height="20"/>
+        <rect x="98" y="10" width="20" height="20"/>
+        <rect x="10" y="98" width="20" height="20"/>
+        <rect x="25" y="25" width="2" height="2"/>
+        <rect x="30" y="30" width="2" height="2"/>
+        <text x="64" y="64" font-family="sans-serif" font-size="10" text-anchor="middle" dominant-baseline="central">ID: ${value.slice(-8)}</text>
+      </g>
+    </svg>
+  `);
+  
   return (
     <div className={`bg-white p-2 rounded-lg shadow-md ${className}`}>
-      <svg width={size} height={size} viewBox="0 0 128 128" className="border border-gray-200 rounded">
-        {/* QR Code Pattern */}
-        <rect x="10" y="10" width="8" height="8" fill="black" />
-        <rect x="24" y="10" width="8" height="8" fill="black" />
-        <rect x="38" y="10" width="8" height="8" fill="black" />
-        <rect x="52" y="10" width="8" height="8" fill="black" />
-        <rect x="66" y="10" width="8" height="8" fill="black" />
-        <rect x="80" y="10" width="8" height="8" fill="black" />
-        <rect x="94" y="10" width="8" height="8" fill="black" />
-        <rect x="108" y="10" width="8" height="8" fill="black" />
-        
-        <rect x="10" y="24" width="8" height="8" fill="black" />
-        <rect x="38" y="24" width="8" height="8" fill="black" />
-        <rect x="66" y="24" width="8" height="8" fill="black" />
-        <rect x="94" y="24" width="8" height="8" fill="black" />
-        <rect x="108" y="24" width="8" height="8" fill="black" />
-        
-        <rect x="10" y="38" width="8" height="8" fill="black" />
-        <rect x="24" y="38" width="8" height="8" fill="black" />
-        <rect x="38" y="38" width="8" height="8" fill="black" />
-        <rect x="52" y="38" width="8" height="8" fill="black" />
-        <rect x="66" y="38" width="8" height="8" fill="black" />
-        <rect x="80" y="38" width="8" height="8" fill="black" />
-        <rect x="94" y="38" width="8" height="8" fill="black" />
-        <rect x="108" y="38" width="8" height="8" fill="black" />
-        
-        <rect x="10" y="52" width="8" height="8" fill="black" />
-        <rect x="24" y="52" width="8" height="8" fill="black" />
-        <rect x="52" y="52" width="8" height="8" fill="black" />
-        <rect x="66" y="52" width="8" height="8" fill="black" />
-        <rect x="80" y="52" width="8" height="8" fill="black" />
-        <rect x="108" y="52" width="8" height="8" fill="black" />
-        
-        <rect x="10" y="66" width="8" height="8" fill="black" />
-        <rect x="38" y="66" width="8" height="8" fill="black" />
-        <rect x="52" y="66" width="8" height="8" fill="black" />
-        <rect x="66" y="66" width="8" height="8" fill="black" />
-        <rect x="80" y="66" width="8" height="8" fill="black" />
-        <rect x="94" y="66" width="8" height="8" fill="black" />
-        <rect x="108" y="66" width="8" height="8" fill="black" />
-        
-        <rect x="10" y="80" width="8" height="8" fill="black" />
-        <rect x="24" y="80" width="8" height="8" fill="black" />
-        <rect x="38" y="80" width="8" height="8" fill="black" />
-        <rect x="52" y="80" width="8" height="8" fill="black" />
-        <rect x="66" y="80" width="8" height="8" fill="black" />
-        <rect x="80" y="80" width="8" height="8" fill="black" />
-        <rect x="94" y="80" width="8" height="8" fill="black" />
-        <rect x="108" y="80" width="8" height="8" fill="black" />
-        
-        <rect x="10" y="94" width="8" height="8" fill="black" />
-        <rect x="24" y="94" width="8" height="8" fill="black" />
-        <rect x="38" y="94" width="8" height="8" fill="black" />
-        <rect x="52" y="94" width="8" height="8" fill="black" />
-        <rect x="66" y="94" width="8" height="8" fill="black" />
-        <rect x="80" y="94" width="8" height="8" fill="black" />
-        <rect x="94" y="94" width="8" height="8" fill="black" />
-        <rect x="108" y="94" width="8" height="8" fill="black" />
-        
-        <rect x="10" y="108" width="8" height="8" fill="black" />
-        <rect x="24" y="108" width="8" height="8" fill="black" />
-        <rect x="38" y="108" width="8" height="8" fill="black" />
-        <rect x="52" y="108" width="8" height="8" fill="black" />
-        <rect x="66" y="108" width="8" height="8" fill="black" />
-        <rect x="80" y="108" width="8" height="8" fill="black" />
-        <rect x="94" y="108" width="8" height="8" fill="black" />
-        <rect x="108" y="108" width="8" height="8" fill="black" />
-        
-        {/* Center text */}
-        <text x="64" y="64" textAnchor="middle" fontSize="6" fill="black" fontFamily="monospace">
-          {value.slice(-8)}
-        </text>
-      </svg>
+      <img src={`data:image/svg+xml;base64,${base64SVG}`} alt="QR Code" width={size} height={size} className="border border-gray-200 rounded" />
     </div>
   );
 }
 
-export default function Home() {
+// The new client component that contains the actual page logic
+function HomePageContent() {
   const searchParams = useSearchParams();
   const [employeeId, setEmployeeId] = useState('');
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -203,29 +157,17 @@ export default function Home() {
   const [cameraActive, setCameraActive] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
-  const [companyName, setCompanyName] = useState('Prime Steel Industries');
-  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [companyAddress, setCompanyAddress] = useState('Jamrud Road, Near Saleem Check Post, Khyber 2500');
-  const [companyPhone, setCompanyPhone] = useState('091-XXXXXXX');
-  const [companyEmail, setCompanyEmail] = useState('support@primesteel.com');
+  
+  // Default company settings
+  const [companySettings, setCompanySettings] = useState<CompanySettings>({
+    companyName: 'Prime Steel Industries',
+    companyAddress: 'Jamrud Road, Near Saleem Check Post, Khyber 2500',
+    companyPhone: '091-XXXXXXX',
+    companyEmail: 'support@primesteel.com',
+    companyLogo: null,
+  });
 
-  // Mock employee data
-  const mockEmployee: Employee = {
-    id: '1',
-    employeeId: 'EMP001',
-    fullName: 'Sixty Creators',
-    department: 'Human Resources',
-    region: 'Khyber',
-    email: 'sixty@primesteel.com',
-    dateOfBirth: '1995-01-01',
-    phoneNumber: '0334-3838679',
-    bloodGroup: 'A+',
-    whatsappNumber: '03343838679',
-    profilePicture: '',
-    status: 'ACTIVE',
-    issueDate: '2024-01-01',
-    expiryDate: '2025-12-31'
-  };
+  // MOCK EMPLOYEE DATA HATA DIYA GAYA HAI
 
   useEffect(() => {
     const employeeParam = searchParams.get('employee');
@@ -243,18 +185,29 @@ export default function Home() {
 
   const fetchCompanySettings = async () => {
     try {
-      setTimeout(() => {
-        setCompanyName('Prime Steel Industries');
-        setCompanyLogo(null);
-        setCompanyAddress('Jamrud Road, Near Saleem Check Post, Khyber 2500');
-        setCompanyPhone('091-XXXXXXX');
-        setCompanyEmail('support@primesteel.com');
-      }, 500);
+      const response = await fetch('/api/settings');
+      if (!response.ok) {
+        throw new Error(`Error fetching settings: ${response.statusText}`);
+      }
+      const data: CompanySettings = await response.json();
+      if (data) {
+        setCompanySettings(data);
+      } else {
+        console.warn('No settings found from API, using default values.');
+      }
     } catch (error) {
       console.error('Error fetching company settings:', error);
+      setCompanySettings({
+        companyName: 'Prime Steel Industries',
+        companyAddress: 'Jamrud Road, Near Saleem Check Post, Khyber 2500',
+        companyPhone: '091-XXXXXXX',
+        companyEmail: 'support@primesteel.com',
+        companyLogo: null,
+      });
     }
   };
 
+  // NAYI FUNCTIONALITI: DATABASE SE DATA FETCH KAREGA
   const handleSearch = async () => {
     if (!employeeId.trim()) {
       setError('Please enter an Employee ID');
@@ -262,29 +215,57 @@ export default function Home() {
     }
     setLoading(true);
     setError('');
-    await fetchCompanySettings();
+    
     try {
-      await handleSearchById(employeeId);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearchById = async (id: string) => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`/api/employees?employeeId=${employeeId}`);
       
-      if (id === 'EMP001') {
-        setEmployee(mockEmployee);
-        setError('');
+      if (!response.ok) {
+        throw new Error('Employee not found');
+      }
+      const data = await response.json();
+      
+      if (data && data.employee) {
+        setEmployee(data.employee);
         setShowReport(true);
       } else {
         throw new Error('Employee not found');
       }
     } catch (err) {
-      setError('Employee not found');
+      console.error('Search error:', err);
+      setError('Employee not found or an error occurred.');
       setEmployee(null);
       setShowReport(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NAYI FUNCTIONALITI: DATABASE SE DATA FETCH KAREGA
+  const handleSearchById = async (id: string) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/employees?employeeId=${id}`);
+
+      if (!response.ok) {
+        throw new Error('Employee not found');
+      }
+      const data = await response.json();
+
+      if (data && data.employee) {
+        setEmployee(data.employee);
+        setShowReport(true);
+      } else {
+        throw new Error('Employee not found');
+      }
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('Employee not found or an error occurred.');
+      setEmployee(null);
+      setShowReport(false);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -347,9 +328,9 @@ export default function Home() {
             {/* Company Logo and Name */}
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                {companyLogo ? (
+                {companySettings.companyLogo ? (
                   <img 
-                    src={companyLogo} 
+                    src={companySettings.companyLogo} 
                     alt="Company Logo" 
                     className="w-10 h-10 rounded-lg object-cover shadow-md"
                   />
@@ -361,7 +342,7 @@ export default function Home() {
               </div>
               <div className="ml-3">
                 <h1 className="text-xl font-bold text-blue-800">
-                  {companyName}
+                  {companySettings.companyName}
                 </h1>
               </div>
             </div>
@@ -391,19 +372,19 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
-                    <span className="font-medium truncate">{companyAddress}</span>
+                    <span className="font-medium truncate">{companySettings.companyAddress}</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-700">
                     <svg className="w-4 h-4 mr-2 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                     </svg>
-                    <span className="font-medium">{companyPhone}</span>
+                    <span className="font-medium">{companySettings.companyPhone}</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-700">
                     <svg className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                     </svg>
-                    <span className="font-medium truncate">{companyEmail}</span>
+                    <span className="font-medium truncate">{companySettings.companyEmail}</span>
                   </div>
                 </div>
               </div>
@@ -575,8 +556,8 @@ export default function Home() {
                           <div>
                             <h4 className="text-sm font-semibold text-blue-900 mb-1">Official Verification Notice</h4>
                             <p className="text-blue-800 text-sm leading-relaxed">
-                              This employee is officially verified by {companyName}. For any inquiries or further verification, 
-                              please contact our HR department at <span className="text-sm font-semibold">{companyPhone}</span>. 
+                              This employee is officially verified by {companySettings.companyName}. For any inquiries or further verification, 
+                              please contact our HR department at <span className="text-sm font-semibold">{companySettings.companyPhone}</span>. 
                               This verification is valid until the expiry date mentioned above.
                             </p>
                           </div>
@@ -672,53 +653,50 @@ export default function Home() {
                           disabled={loading}
                           className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg"
                         >
-                          {loading ? 'Verifying Employee...' : 'Search'}
+                          {loading ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          ) : (
+                            <>
+                              <Search className="w-5 h-5 mr-2" />
+                              Search
+                            </>
+                          )}
                         </Button>
                       </div>
+                      {error && (
+                        <Alert className="mt-4 border-l-4 border-red-500 bg-red-50" variant="destructive">
+                          <AlertDescription className="text-red-700 font-medium">
+                            {error}
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </div>
                   </TabsContent>
 
                   <TabsContent value="camera" className="space-y-6">
-                    <QRScanner 
-                      onScan={handleQRScan}
-                      onError={handleScannerError}
-                    />
+                    <QRScanner onScan={handleQRScan} onError={handleScannerError} />
                   </TabsContent>
                 </Tabs>
-
-                {error && (
-                  <Alert className="mt-6 border-l-4 border-red-500 bg-red-50" variant="destructive">
-                    <AlertDescription className="text-red-700 font-medium">{error}</AlertDescription>
-                  </Alert>
-                )}
               </CardContent>
             </Card>
 
-            {/* Support Section */}
-            <div className="text-center mt-8">
-              <div className="inline-flex items-center gap-3 bg-white rounded-full px-6 py-3 shadow-lg border border-blue-100">
-                <MessageCircle className="w-5 h-5 text-blue-600" />
-                <span className="text-gray-700 font-medium">Need help with verification?</span>
-                <span className="text-gray-500 text-sm">Contact support@primesteel.com</span>
-              </div>
+            {/* Footer Company Info */}
+            <div className="text-center mt-12 py-6 bg-gray-900 text-gray-300 text-sm rounded-lg shadow-inner">
+              <p>&copy; {new Date().getFullYear()} {companySettings.companyName}. All rights reserved.</p>
+              <p>{companySettings.companyAddress}</p>
             </div>
           </div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-slate-800 to-slate-900 text-white mt-20 border-t border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <p className="text-gray-400 text-sm">
-              © 2025 {companyName}. All rights reserved. | Official Employee Verification System
-            </p>
-            <p className="text-gray-500 text-xs mt-2">
-              This system is for official use only. Unauthorized access is prohibited.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
+  );
+}
+
+// The main default export that includes the Suspense boundary
+export default function HomeWithSuspense() {
+  return (
+    <Suspense fallback={<div>Loading application...</div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }
