@@ -1,3 +1,4 @@
+export const dynamic = 'force-client';
 'use client'
 export const dynamic = 'force-client';
 import { useSession } from 'next-auth/react'
