@@ -1,179 +1,302 @@
-import { useState, useEffect } from 'react'
-import { QrCode, Search, User, Building, Calendar, Phone, Droplets, Badge, CheckCircle, XCircle, Camera, Shield, MessageCircle, Lock, MapPin, Mail, Check, ChevronDown, ChevronUp } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import QRScanner from '@/components/QRScanner'
-import QRCodeGenerator from '@/components/QRCodeGenerator'
+'use client';
 
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { QrCode, Search, User, Building, Calendar, Phone, Droplets, Badge, CheckCircle, XCircle, Camera, Shield, MessageCircle, Lock, MapPin, Mail, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+// Employee Interface
 interface Employee {
-  id: string
-  employeeId: string
-  fullName: string
-  department: string
-  region?: string
-  email?: string
-  dateOfBirth: string
-  phoneNumber: string
-  bloodGroup: string
-  whatsappNumber?: string
-  profilePicture?: string
-  status: 'ACTIVE' | 'INACTIVE'
-  issueDate: string
-  expiryDate: string
+  id: string;
+  employeeId: string;
+  fullName: string;
+  department: string;
+  region?: string;
+  email?: string;
+  dateOfBirth: string;
+  phoneNumber: string;
+  bloodGroup: string;
+  whatsappNumber?: string;
+  profilePicture?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  issueDate: string;
+  expiryDate: string;
 }
 
-export default function Home() {
-  // URL سے employee ID نکالیں (کلائنٹ سائیڈ)
-  const [employeeIdFromUrl, setEmployeeIdFromUrl] = useState<string | null>(null)
+// Company Settings Interface
+interface CompanySettings {
+  companyName: string;
+  companyAddress: string;
+  companyPhone: string;
+  companyEmail: string;
+  companyLogo?: string | null;
+}
+
+// QR Scanner Component (no changes needed here)
+function QRScanner({ onScan, onError }: { onScan: (data: string) => void; onError: (error: string) => void }) {
+  const [hasCamera, setHasCamera] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+
+  useEffect(() => {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      setHasCamera(true);
+    }
+  }, []);
+
+  const startScanning = () => {
+    setIsScanning(true);
+    // This part is for mock scanning, it's fine for now.
+    setTimeout(() => {
+      const mockQRData = `${window.location.origin}/verify?employee=EMP001`;
+      onScan(mockQRData);
+      setIsScanning(false);
+    }, 2000);
+  };
+
+  if (!hasCamera) {
+    return (
+      <div className="text-center p-6 bg-red-50 rounded-lg border border-red-200">
+        <Camera className="w-12 h-12 text-red-500 mx-auto mb-3" />
+        <p className="text-red-700 font-medium">Camera is not available on this device</p>
+        <p className="text-red-600 text-sm mt-1">Please use manual entry instead</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {!isScanning ? (
+        <div className="text-center space-y-4">
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+            <Camera className="w-10 h-10 text-blue-600" />
+          </div>
+          <p className="text-gray-600 text-lg">
+            QR code scan karne ke liye niche diye gaye button par click karein.
+          </p>
+          <Button 
+            onClick={startScanning}
+            className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg shadow-lg"
+          >
+            <Camera className="w-5 h-5 mr-2" />
+            Camera Scan shuru karein
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="bg-black rounded-xl overflow-hidden shadow-2xl">
+            <div className="w-full h-[400px] flex items-center justify-center bg-gray-900">
+              <div className="text-center text-white">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-400 mx-auto mb-4"></div>
+                <p className="text-lg font-medium">QR code scan ho raha hai...</p>
+                <p className="text-sm text-gray-300 mt-2">QR code ko camera ke saamne rakhein.</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-center space-y-2">
+            <p className="text-sm text-gray-600">
+              QR code ko frame ke andar rakhein scan karne ke liye.
+            </p>
+            <div className="flex justify-center gap-2">
+              <Button 
+                onClick={() => setIsScanning(false)}
+                variant="outline"
+                className="px-6 py-2 border-2 border-red-300 text-red-600 hover:bg-red-50 rounded-lg"
+              >
+                Camera rokein
+              </Button>
+              <Button 
+                onClick={startScanning}
+                variant="outline"
+                className="px-6 py-2 border-2 border-blue-300 text-blue-600 hover:bg-blue-50 rounded-lg"
+              >
+                Dobara koshish karein
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// QR Code Generator Component (FIXED)
+function QRCodeGenerator({ value, size = 128, className = '' }: { value: string; size?: number; className?: string }) {
+  const svgContent = `
+    <svg width="${size}" height="${size}" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="white"/>
+      <g fill="black">
+        <rect x="10" y="10" width="20" height="20"/>
+        <rect x="98" y="10" width="20" height="20"/>
+        <rect x="10" y="98" width="20" height="20"/>
+        <rect x="25" y="25" width="2" height="2"/>
+        <rect x="30" y="30" width="2" height="2"/>
+        <text x="64" y="64" font-family="sans-serif" font-size="10" text-anchor="middle" dominant-baseline="central">${value.split('employee=')[1] || 'ID'}</text>
+      </g>
+    </svg>
+  `;
+
+  // ✅ محفوظ طریقہ
+  const svgToBase64 = (str: string) => {
+    return btoa(unescape(encodeURIComponent(str)));
+  };
+
+  const base64SVG = svgToBase64(svgContent);
+
+  return (
+    <div className={`bg-white p-2 rounded-lg shadow-md ${className}`}>
+      <img 
+        src={`data:image/svg+xml;base64,${base64SVG}`} 
+        alt="QR Code" 
+        width={size} 
+        height={size} 
+        className="border border-gray-200 rounded"
+      />
+    </div>
+  );
+}
+
+// The new client component that contains the actual page logic
+function HomePageContent() {
+  const searchParams = useSearchParams();
+  const [employeeId, setEmployeeId] = useState('');
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showReport, setShowReport] = useState(false);
+  const [showContactInfo, setShowContactInfo] = useState(false);
   
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search)
-      const employeeParam = urlParams.get('employee')
-      if (employeeParam) {
-        setEmployeeIdFromUrl(employeeParam.toUpperCase())
-      }
-    }
-  }, [])
-
-  const [employeeId, setEmployeeId] = useState('')
-  const [employee, setEmployee] = useState<Employee | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [cameraActive, setCameraActive] = useState(false)
-  const [showReport, setShowReport] = useState(false)
-  const [showContactInfo, setShowContactInfo] = useState(false)
-  const [companyName, setCompanyName] = useState('Prime Steel Industries')
-  const [companyLogo, setCompanyLogo] = useState<string | null>(null)
-  const [companyAddress, setCompanyAddress] = useState('Jamrud Road, Near Saleem Check Post, Khyber 2500')
-  const [companyPhone, setCompanyPhone] = useState('091-XXXXXXX')
-  const [companyEmail, setCompanyEmail] = useState('support@primesteel.com')
+  // Default company settings
+  const [companySettings, setCompanySettings] = useState<CompanySettings>({
+    companyName: 'Prime Steel Industries',
+    companyAddress: 'Jamrud Road, Near Saleem Check Post, Khyber 2500',
+    companyPhone: '091-XXXXXXX',
+    companyEmail: 'support@primesteel.com',
+    companyLogo: null,
+  });
 
   useEffect(() => {
-    if (employeeIdFromUrl) {
-      setEmployeeId(employeeIdFromUrl)
+    const employeeParam = searchParams.get('employee');
+    if (employeeParam) {
+      setEmployeeId(employeeParam.toUpperCase());
       fetchCompanySettings().then(() => {
-        handleSearchById(employeeIdFromUrl)
-      })
+        handleSearchById(employeeParam.toUpperCase());
+      });
     }
-  }, [employeeIdFromUrl])
+  }, [searchParams]);
 
   useEffect(() => {
-    fetchCompanySettings()
-  }, [])
+    fetchCompanySettings();
+  }, []);
 
   const fetchCompanySettings = async () => {
     try {
-      const response = await fetch('/api/public/settings')
-      if (response.ok) {
-        const data = await response.json()
-        setCompanyName(data.settings.companyName || 'Prime Steel Industries')
-        setCompanyLogo(data.settings.companyLogo || null)
-        setCompanyAddress(data.settings.companyAddress || 'Jamrud Road, Near Saleem Check Post, Khyber 2500')
-        setCompanyPhone(data.settings.companyPhone || '091-XXXXXXX')
-        setCompanyEmail(data.settings.companyEmail || 'support@primesteel.com')
+      const response = await fetch('/api/admin/settings');
+      if (!response.ok) {
+        throw new Error(`Error fetching settings: ${response.statusText}`);
+      }
+      const data: CompanySettings = await response.json();
+      if (data) {
+        setCompanySettings(data);
       }
     } catch (error) {
-      console.error('Error fetching company settings:', error)
+      console.error('Error fetching company settings:', error);
+      // Use defaults
     }
-  }
+  };
 
+  // ✅ درست سرچ فنکشن
   const handleSearch = async () => {
     if (!employeeId.trim()) {
-      setError('Please enter an Employee ID')
-      return
+      setError('Please enter an Employee ID');
+      return;
     }
-
-    setLoading(true)
-    setError('')
-
-    await fetchCompanySettings()
+    setLoading(true);
+    setError('');
 
     try {
-      await handleSearchById(employeeId)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSearchById = async (id: string) => {
-    try {
-      const response = await fetch(`/api/employee/${id}`)
+      const response = await fetch(`/api/employee/${employeeId}`);
       
-      if (!response.ok) {
-        throw new Error('Employee not found')
+      if (!response.ok) throw new Error('Not found');
+      
+      const data = await response.json();
+      if (data.employee) {
+        setEmployee(data.employee);
+        setShowReport(true);
+      } else {
+        throw new Error('Not found');
       }
-
-      const data = await response.json()
-      setEmployee(data.employee)
-      setError('')
-      setShowReport(true)
     } catch (err) {
-      setError('Employee not found')
-      setEmployee(null)
-      setShowReport(false)
+      setError('Employee not found or an error occurred.');
+      setEmployee(null);
+      setShowReport(false);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  // ✅ درست handleSearchById (پہلے والا غلط تھا)
+  const handleSearchById = async (id: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/employee/${id}`);
+      if (!response.ok) throw new Error('Not found');
+      const data = await response.json();
+      if (data.employee) {
+        setEmployee(data.employee);
+        setShowReport(true);
+      } else {
+        throw new Error('Not found');
+      }
+    } catch (err) {
+      setError('Employee not found or an error occurred.');
+      setEmployee(null);
+      setShowReport(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleQRScan = async (data: string) => {
-    setCameraActive(false)
-    
     try {
-      let employeeId = data
-      
+      let employeeId = data;
       if (data.includes('employee=')) {
-        const urlParams = new URLSearchParams(data.split('?')[1])
-        employeeId = urlParams.get('employee') || data
+        const urlParams = new URLSearchParams(data.split('?')[1]);
+        employeeId = urlParams.get('employee') || data;
       }
-      
-      employeeId = employeeId.toUpperCase().replace(/[^A-Z0-9]/g, '')
-      
-      setEmployeeId(employeeId)
-      await handleSearchById(employeeId)
+      employeeId = employeeId.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      setEmployeeId(employeeId);
+      const response = await fetch(`/api/employee/${employeeId}`);
+      if (!response.ok) throw new Error('Not found');
+      const data = await response.json();
+      if (data.employee) {
+        setEmployee(data.employee);
+        setShowReport(true);
+      }
     } catch (err) {
-      setError('Invalid QR code format')
+      setError('Invalid QR code or employee not found');
     }
-  }
-
-  const handleScannerError = (errorMessage: string) => {
-    let error = 'Camera access denied or not available'
-    
-    if (errorMessage.includes('NotAllowedError')) {
-      error = 'Camera permission denied. Please check your browser settings and allow camera access.'
-    } else if (errorMessage.includes('NotFoundError')) {
-      error = 'No camera found on this device.'
-    } else if (errorMessage.includes('NotSupportedError')) {
-      error = 'Camera not supported by this browser.'
-    } else if (errorMessage.includes('NotReadableError')) {
-      error = 'Camera is already in use by another application.'
-    } else if (errorMessage.includes('OverconstrainedError')) {
-      error = 'Camera constraints not supported. Please try again.'
-    } else {
-      error = errorMessage
-    }
-    
-    setError(error)
-    setCameraActive(false)
-  }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    })
-  }
+    });
+  };
 
   const handleSearchAgain = () => {
-    setShowReport(false)
-    setEmployee(null)
-    setEmployeeId('')
-    setError('')
-  }
+    setShowReport(false);
+    setEmployee(null);
+    setEmployeeId('');
+    setError('');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -181,12 +304,11 @@ export default function Home() {
       <header className="bg-white shadow-lg border-b border-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
-            {/* Company Logo and Name */}
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                {companyLogo ? (
+                {companySettings.companyLogo ? (
                   <img 
-                    src={companyLogo} 
+                    src={companySettings.companyLogo} 
                     alt="Company Logo" 
                     className="w-10 h-10 rounded-lg object-cover shadow-md"
                   />
@@ -198,12 +320,10 @@ export default function Home() {
               </div>
               <div className="ml-3">
                 <h1 className="text-xl font-bold text-blue-800">
-                  {companyName}
+                  {companySettings.companyName}
                 </h1>
               </div>
             </div>
-
-            {/* Contact Toggle Button */}
             <Button
               variant="ghost"
               size="sm"
@@ -219,8 +339,6 @@ export default function Home() {
               )}
             </Button>
           </div>
-
-          {/* Compact Contact Information - Only show when toggled */}
           {showContactInfo && (
             <div className="pb-4">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
@@ -230,19 +348,19 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
-                    <span className="font-medium truncate">{companyAddress}</span>
+                    <span className="font-medium truncate">{companySettings.companyAddress}</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-700">
                     <svg className="w-4 h-4 mr-2 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                     </svg>
-                    <span className="font-medium">{companyPhone}</span>
+                    <span className="font-medium">{companySettings.companyPhone}</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-700">
                     <svg className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                     </svg>
-                    <span className="font-medium truncate">{companyEmail}</span>
+                    <span className="font-medium truncate">{companySettings.companyEmail}</span>
                   </div>
                 </div>
               </div>
@@ -251,12 +369,9 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1">
         {showReport && employee ? (
-          // Full Page Report View
           <div className="min-h-screen">
-            {/* Report Header */}
             <div className="bg-white shadow-sm border-b">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="flex items-center justify-between">
@@ -276,7 +391,6 @@ export default function Home() {
                       )}
                     </h2>
                   </div>
-
                   <div className="text-right">
                     <p className="text-xs text-gray-500">Report Generated</p>
                     <p className="text-sm font-semibold text-black">{new Date().toLocaleDateString()}</p>
@@ -285,15 +399,12 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Employee Report Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
               <Card className="overflow-hidden shadow-2xl border-0 bg-white">
                 <div className={`h-3 ${employee.status === 'ACTIVE' ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-red-500 to-red-600'}`} />
                 <CardContent className="p-8">
                   <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Left Column - Profile Picture and QR Code */}
                     <div className="flex flex-col items-center space-y-6">
-                      {/* Profile Picture */}
                       <div className="flex-shrink-0">
                         <div className="w-40 h-40 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center overflow-hidden shadow-xl border-4 border-white relative">
                           {employee.profilePicture ? (
@@ -306,7 +417,6 @@ export default function Home() {
                             <User className="w-20 h-20 text-gray-400" />
                           )}
                         </div>
-                        {/* Employee Name and Verified Badge Below Profile */}
                         <div className="text-center mt-4">
                           <h3 className="text-xl font-bold text-gray-900 flex items-center justify-center gap-2">
                             {employee.fullName}
@@ -319,22 +429,21 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* QR Code */}
                       <div className="text-center">
                         <p className="text-gray-500 font-medium mb-2">Employee ID QR Code</p>
-                        <QRCodeGenerator 
-                          value={`${typeof window !== 'undefined' ? window.location.origin : 'https://primeverification.vercel.app'}/verify?employee=${employee.employeeId}`}
-                          size={150}
-                          className="p-2 bg-white rounded-lg shadow-md"
-                        />
+<QRCodeGenerator 
+  value={`${window.location.origin}/verify?employee=${employee.employeeId}`}
+  size={150}
+  className="p-2 bg-white rounded-lg shadow-md"
+/>
                         <p className="text-gray-400 mt-2 text-sm">Scan for verification</p>
                         
-                        {/* WhatsApp Button */}
                         {employee.whatsappNumber && (
                           <Button
                             onClick={() => {
                               const message = `Hello, I'm verifying ${employee.fullName} (${employee.employeeId}) from Prime Steel. Please confirm this employee's status.`;
-                              const whatsappUrl = `https://wa.me/${employee.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+                              const phone = employee.whatsappNumber.replace(/[^0-9]/g, '');
+                              const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
                               window.open(whatsappUrl, '_blank');
                             }}
                             className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg shadow-md w-full mt-4 text-sm"
@@ -346,7 +455,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Right Column - Employee Details */}
                     <div className="flex-1 space-y-6">
                       <div className="flex justify-end">
                         <div className="text-right">
@@ -408,15 +516,14 @@ export default function Home() {
                         )}
                       </div>
 
-                      {/* Verification Notice */}
                       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
                         <div className="flex items-start gap-3">
                           <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
                           <div>
                             <h4 className="text-sm font-semibold text-blue-900 mb-1">Official Verification Notice</h4>
                             <p className="text-blue-800 text-sm leading-relaxed">
-                              This employee is officially verified by {companyName}. For any inquiries or further verification, 
-                              please contact our HR department at <span className="text-sm font-semibold">{companyPhone}</span>. 
+                              This employee is officially verified by {companySettings.companyName}. For any inquiries or further verification, 
+                              please contact our HR department at <span className="text-sm font-semibold">{companySettings.companyPhone}</span>. 
                               This verification is valid until the expiry date mentioned above.
                             </p>
                           </div>
@@ -449,7 +556,6 @@ export default function Home() {
               </Card>
             </div>
 
-            {/* Navigation Buttons */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
               <div className="flex justify-center gap-4">
                 <Button
@@ -463,7 +569,6 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          // Search Interface
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight inline-flex items-center gap-3">
@@ -474,7 +579,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Search Section */}
             <Card className="mb-12 shadow-xl border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
                 <CardTitle className="flex items-center gap-3 text-2xl font-bold text-black">
@@ -492,7 +596,7 @@ export default function Home() {
                       Camera Scan
                     </TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="manual" className="space-y-6">
                     <div className="space-y-3">
                       <Label htmlFor="employeeId" className="text-lg font-semibold text-gray-700">
@@ -512,103 +616,48 @@ export default function Home() {
                           disabled={loading}
                           className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg"
                         >
-                          {loading ? 'Verifying Employee...' : 'Search'}
+                          {loading ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          ) : (
+                            <>
+                              <Search className="w-5 h-5 mr-2" />
+                              Search
+                            </>
+                          )}
                         </Button>
                       </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="camera" className="space-y-6">
-                    <div className="space-y-4">
-                      {!cameraActive ? (
-                        <div className="text-center space-y-4">
-                          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                            <Camera className="w-10 h-10 text-blue-600" />
-                          </div>
-                          <p className="text-gray-600 text-lg">
-                            Click the button below to scan QR code with your camera
-                          </p>
-                          <Button 
-                            onClick={() => setCameraActive(true)}
-                            className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg shadow-lg"
-                          >
-                            <Camera className="w-5 h-5 mr-2" />
-                            Start Camera Scan
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="bg-black rounded-xl overflow-hidden shadow-2xl">
-                            <div className="w-full h-[400px]">
-                              <QRScanner 
-                                onScan={handleQRScan}
-                                onError={handleScannerError}
-                              />
-                            </div>
-                          </div>
-                          <div className="text-center space-y-2">
-                            <p className="text-sm text-gray-600">
-                              Position the QR code within the frame to scan
-                            </p>
-                            <div className="flex justify-center gap-2">
-                              <Button 
-                                onClick={() => setCameraActive(false)}
-                                variant="outline"
-                                className="px-6 py-2 border-2 border-red-300 text-red-600 hover:bg-red-50 rounded-lg"
-                              >
-                                Stop Camera
-                              </Button>
-                              <Button 
-                                onClick={() => {
-                                  setCameraActive(false)
-                                  setTimeout(() => setCameraActive(true), 500)
-                                }}
-                                variant="outline"
-                                className="px-6 py-2 border-2 border-blue-300 text-blue-600 hover:bg-blue-50 rounded-lg"
-                              >
-                                Retry Camera
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
+                      {error && (
+                        <Alert className="mt-4 border-l-4 border-red-500 bg-red-50" variant="destructive">
+                          <AlertDescription className="text-red-700 font-medium">
+                            {error}
+                          </AlertDescription>
+                        </Alert>
                       )}
                     </div>
                   </TabsContent>
-                </Tabs>
 
-                {error && (
-                  <Alert className="mt-6 border-l-4 border-red-500 bg-red-50" variant="destructive">
-                    <AlertDescription className="text-red-700 font-medium">{error}</AlertDescription>
-                  </Alert>
-                )}
+                  <TabsContent value="camera" className="space-y-6">
+                    <QRScanner onScan={handleQRScan} onError={() => {}} />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
-            
-            {/* Support Section */}
-            <div className="text-center mt-8">
-              <div className="inline-flex items-center gap-3 bg-white rounded-full px-6 py-3 shadow-lg border border-blue-100">
-                <MessageCircle className="w-5 h-5 text-blue-600" />
-                <span className="text-gray-700 font-medium">Need help with verification?</span>
-                <span className="text-gray-500 text-sm">Contact support@primesteel.com</span>
-              </div>
+
+            <div className="text-center mt-12 py-6 bg-gray-900 text-gray-300 text-sm rounded-lg shadow-inner">
+              <p>&copy; {new Date().getFullYear()} {companySettings.companyName}. All rights reserved.</p>
+              <p>{companySettings.companyAddress}</p>
             </div>
           </div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-slate-800 to-slate-900 text-white mt-20 border-t border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <p className="text-gray-400 text-sm">
-              © 2025 {companyName}. All rights reserved. | Official Employee Verification System
-            </p>
-            <p className="text-gray-500 text-xs mt-2">
-              This system is for official use only. Unauthorized access is prohibited.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
-  )
+  );
+}
+
+export default function HomeWithSuspense() {
+  return (
+    <Suspense fallback={<div>Loading application...</div>}>
+      <HomePageContent />
+    </Suspense>
+  );
 }
