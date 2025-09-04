@@ -432,7 +432,7 @@ function HomePageContent() {
                       <div className="text-center">
                         <p className="text-gray-500 font-medium mb-2">Employee ID QR Code</p>
 <QRCodeGenerator 
-  value={`${window.location.origin}/verify?employee=${employee.employeeId}`}
+  value={`${typeof window !== 'undefined' ? window.location.origin : 'https://primeverification.vercel.app'}/verify?employee=${employee.employeeId}`}
   size={150}
   className="p-2 bg-white rounded-lg shadow-md"
 />
