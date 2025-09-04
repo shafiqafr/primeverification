@@ -1,6 +1,5 @@
 'use client';
-export const dynamic = 'force-client';
-
+export const dynamic = 'force-dynamic';
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { QrCode, Search, User, Building, Calendar, Phone, Droplets, Badge, CheckCircle, XCircle, Camera, Shield, MessageCircle, Lock, MapPin, Mail, Check, ChevronDown, ChevronUp } from 'lucide-react';
