@@ -115,7 +115,7 @@ function HomePageContent() {
     }
   };
 
-  const handleQRScan = async ( string) => {
+  const handleQRScan = async (data: string) => {
     setCameraActive(false);
     try {
       let employeeId = data;
