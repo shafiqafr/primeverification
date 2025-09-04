@@ -120,14 +120,14 @@ function HomePageContent() {
     try {
       let employeeId = data;
       if (data.includes('employee=')) {
-        const urlParams = new URLSearchParams(data.split('?')[1]);
-        employeeId = urlParams.get('employee') || data;
+        const url = new URL(data);
+        employeeId = url.searchParams.get('employee') || data;
       }
       employeeId = employeeId.toUpperCase().replace(/[^A-Z0-9]/g, '');
       setEmployeeId(employeeId);
       await handleSearchById(employeeId);
     } catch (err) {
-      setError('Invalid QR code format');
+      setError('Invalid QR code or employee not found');
     }
   };
 
@@ -148,7 +148,6 @@ function HomePageContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
       <header className="bg-white shadow-lg border-b border-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
@@ -476,7 +475,7 @@ function HomePageContent() {
                   </TabsContent>
                   
                   <TabsContent value="camera" className="space-y-6">
-                    <QRScanner onScan={handleQRScan} onError={() => {}} />
+                    <QRScanner onScan={handleQRScan} onError={(err) => setError(err)} />
                   </TabsContent>
                 </Tabs>
               </CardContent>
