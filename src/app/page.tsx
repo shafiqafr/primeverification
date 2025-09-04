@@ -1,614 +1,339 @@
 'use client'
 
-export const dynamic = 'force-client';
-
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { QrCode, Search, User, Building, Calendar, Phone, Droplets, Badge, CheckCircle, XCircle, Camera, Shield, MessageCircle, Lock, MapPin, Mail, Check, ChevronDown, ChevronUp } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { Building2, Users, BarChart3, LogOut, Menu, X, Activity, Shield, FileText, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import QRScanner from '@/components/QRScanner'
-import QRCodeGenerator from '@/components/QRCodeGenerator'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { signOut } from 'next-auth/react'
 
-interface Employee {
-  id: string
-  employeeId: string
-  fullName: string
-  department: string
-  region?: string
-  email?: string
-  dateOfBirth: string
-  phoneNumber: string
-  bloodGroup: string
-  whatsappNumber?: string
-  profilePicture?: string
-  status: 'ACTIVE' | 'INACTIVE'
-  issueDate: string
-  expiryDate: string
-}
-
-export default function Home() {
-  const searchParams = useSearchParams()
-  const [employeeId, setEmployeeId] = useState('')
-  const [employee, setEmployee] = useState<Employee | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [cameraActive, setCameraActive] = useState(false)
-  const [showReport, setShowReport] = useState(false)
-  const [showContactInfo, setShowContactInfo] = useState(false)
-  const [companyName, setCompanyName] = useState('Prime Steel Industries')
-  const [companyLogo, setCompanyLogo] = useState<string | null>(null)
-  const [companyAddress, setCompanyAddress] = useState('Jamrud Road, Near Saleem Check Post, Khyber 2500')
-  const [companyPhone, setCompanyPhone] = useState('091-XXXXXXX')
-  const [companyEmail, setCompanyEmail] = useState('support@primesteel.com')
+export default function AdminDashboard() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [stats, setStats] = useState({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    verificationsToday: 0,
+    totalVerifications: 0
+  })
 
   useEffect(() => {
-    const employeeParam = searchParams.get('employee')
-    if (employeeParam) {
-      setEmployeeId(employeeParam.toUpperCase())
-      fetchCompanySettings().then(() => {
-        handleSearchById(employeeParam.toUpperCase())
-      })
+    if (status === 'unauthenticated') {
+      router.push('/admin/login')
     }
-  }, [searchParams])
+  }, [status, router])
 
   useEffect(() => {
-    fetchCompanySettings()
-  }, [])
+    if (session) {
+      fetchStats()
+    }
+  }, [session])
 
-  const fetchCompanySettings = async () => {
+  const fetchStats = async () => {
     try {
-      const response = await fetch('/api/public/settings')
-      if (response.ok) {
-        const data = await response.json()
-        setCompanyName(data.settings.companyName || 'Prime Steel Industries')
-        setCompanyLogo(data.settings.companyLogo || null)
-        setCompanyAddress(data.settings.companyAddress || 'Jamrud Road, Near Saleem Check Post, Khyber 2500')
-        setCompanyPhone(data.settings.companyPhone || '091-XXXXXXX')
-        setCompanyEmail(data.settings.companyEmail || 'support@primesteel.com')
+      const [employeesRes, logsRes] = await Promise.all([
+        fetch('/api/admin/employees'),
+        fetch('/api/admin/logs')
+      ])
+
+      if (employeesRes.ok) {
+        const employeesData = await employeesRes.json()
+        const activeCount = employeesData.employees.filter((e: any) => e.status === 'ACTIVE').length
+        setStats(prev => ({
+          ...prev,
+          totalEmployees: employeesData.employees.length,
+          activeEmployees: activeCount
+        }))
+      }
+
+      if (logsRes.ok) {
+        const logsData = await logsRes.json()
+        const today = new Date().toDateString()
+        const todayCount = logsData.logs.filter((log: any) => 
+          new Date(log.timestamp).toDateString() === today
+        ).length
+        setStats(prev => ({
+          ...prev,
+          verificationsToday: todayCount,
+          totalVerifications: logsData.logs.length
+        }))
       }
     } catch (error) {
-      console.error('Error fetching company settings:', error)
+      console.error('Error fetching stats:', error)
     }
   }
 
-  const handleSearch = async () => {
-    if (!employeeId.trim()) {
-      setError('Please enter an Employee ID')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
-    await fetchCompanySettings()
-
-    try {
-      await handleSearchById(employeeId)
-    } finally {
-      setLoading(false)
-    }
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
-  const handleSearchById = async (id: string) => {
-    try {
-      const response = await fetch(`/api/employee/${id}`)
-      
-      if (!response.ok) {
-        throw new Error('Employee not found')
-      }
-
-      const data = await response.json()
-      setEmployee(data.employee)
-      setError('')
-      setShowReport(true)
-    } catch (err) {
-      setError('Employee not found')
-      setEmployee(null)
-      setShowReport(false)
-    }
-  }
-
-  const handleQRScan = async ( string) => {
-    setCameraActive(false)
-    
-    try {
-      console.log('QR Code scanned:', data)
-      
-      let employeeId = data
-      
-      if (data.includes('employee=')) {
-        const urlParams = new URLSearchParams(data.split('?')[1])
-        employeeId = urlParams.get('employee') || data
-      }
-      
-      employeeId = employeeId.toUpperCase().replace(/[^A-Z0-9]/g, '')
-      
-      console.log('Extracted Employee ID:', employeeId)
-      
-      setEmployeeId(employeeId)
-      await handleSearchById(employeeId)
-    } catch (err) {
-      console.error('QR Scan error:', err)
-      setError('Invalid QR code format')
-    }
-  }
-
-  const handleScannerError = (errorMessage: string) => {
-    console.error('Scanner error:', errorMessage)
-    let error = 'Camera access denied or not available'
-    
-    if (errorMessage.includes('NotAllowedError')) {
-      error = 'Camera permission denied. Please check your browser settings and allow camera access.'
-    } else if (errorMessage.includes('NotFoundError')) {
-      error = 'No camera found on this device.'
-    } else if (errorMessage.includes('NotSupportedError')) {
-      error = 'Camera not supported by this browser.'
-    } else if (errorMessage.includes('NotReadableError')) {
-      error = 'Camera is already in use by another application.'
-    } else if (errorMessage.includes('OverconstrainedError')) {
-      error = 'Camera constraints not supported. Please try again.'
-    } else {
-      error = errorMessage
-    }
-    
-    setError(error)
-    setCameraActive(false)
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
-
-  const handleSearchAgain = () => {
-    setShowReport(false)
-    setEmployee(null)
-    setEmployeeId('')
-    setError('')
+  if (!session) {
+    return null
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <header className="bg-white shadow-lg border-b border-blue-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            {/* Company Logo and Name */}
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                {companyLogo ? (
-                  <img 
-                    src={companyLogo} 
-                    alt="Company Logo" 
-                    className="w-10 h-10 rounded-lg object-cover shadow-md"
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center shadow-md">
-                    <span className="text-white font-bold text-lg">P</span>
-                  </div>
-                )}
-              </div>
-              <div className="ml-3">
-                <h1 className="text-xl font-bold text-blue-800">
-                  {companyName}
-                </h1>
-              </div>
-            </div>
-
-            {/* Contact Toggle Button */}
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowContactInfo(!showContactInfo)}
-              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors"
+              className="md:hidden"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
             >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Contact Info
-              {showContactInfo ? (
-                <ChevronUp className="w-4 h-4 ml-1" />
-              ) : (
-                <ChevronDown className="w-4 h-4 ml-1" />
-              )}
+              {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+            <div className="flex items-center ml-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="ml-3 text-xl font-bold bg-gradient-to-r from-blue-800 to-blue-600 bg-clip-text text-transparent">
+                Admin Panel
+              </h1>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="hidden sm:block text-right">
+              <p className="text-sm font-medium text-gray-900">{session.user.name}</p>
+              <p className="text-xs text-gray-500">{session.user.role}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => signOut()}
+              className="border-red-200 text-red-600 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
             </Button>
           </div>
-
-          {/* Compact Contact Information - Only show when toggled */}
-          {showContactInfo && (
-            <div className="pb-4">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="flex items-center text-sm text-gray-700">
-                    <svg className="w-4 h-4 mr-2 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    <span className="font-medium truncate">{companyAddress}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-700">
-                    <svg className="w-4 h-4 mr-2 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                    </svg>
-                    <span className="font-medium">{companyPhone}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-700">
-                    <svg className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                    <span className="font-medium truncate">{companyEmail}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1">
-        {showReport && employee ? (
-          // Full Page Report View
-          <div className="min-h-screen">
-            {/* Report Header */}
-            <div className="bg-white shadow-sm border-b">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-black flex items-center gap-2">
-                      Employee Verification Report
-                      <span className="ml-2 text-sm font-normal text-gray-500">
-                        Official verification results
-                      </span>
-                      {employee?.status === 'ACTIVE' && (
-                        <span className="inline-flex items-center gap-1 ml-3 px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                          Verified
-                        </span>
-                      )}
-                    </h2>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="text-xs text-gray-500">Report Generated</p>
-                    <p className="text-sm font-semibold text-black">{new Date().toLocaleDateString()}</p>
-                  </div>
+      <div className="flex">
+        {/* Sidebar */}
+        <div className={`${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } fixed md:translate-x-0 md:static inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out md:transform-none`}>
+          <div className="p-6">
+            <nav className="space-y-2">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-left p-3 h-auto hover:bg-blue-50 hover:text-blue-700 rounded-lg"
+                onClick={() => router.push('/admin')}
+              >
+                <BarChart3 className="h-5 w-5 mr-3" />
+                <div>
+                  <div className="font-semibold">Dashboard</div>
+                  <div className="text-xs text-gray-500">Overview & Analytics</div>
                 </div>
+              </Button>
+              
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-left p-3 h-auto hover:bg-blue-50 hover:text-blue-700 rounded-lg"
+                onClick={() => router.push('/admin/employees')}
+              >
+                <Users className="h-5 w-5 mr-3" />
+                <div>
+                  <div className="font-semibold">Employees</div>
+                  <div className="text-xs text-gray-500">Manage Staff</div>
+                </div>
+              </Button>
+              
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-left p-3 h-auto hover:bg-blue-50 hover:text-blue-700 rounded-lg"
+                onClick={() => router.push('/admin/logs')}
+              >
+                <Activity className="h-5 w-5 mr-3" />
+                <div>
+                  <div className="font-semibold">Verification Logs</div>
+                  <div className="text-xs text-gray-500">Track Activity</div>
+                </div>
+              </Button>
+
+              <div className="pt-4 mt-4 border-t border-gray-200">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-left p-3 h-auto hover:bg-gray-50 rounded-lg"
+                  onClick={() => router.push('/admin/settings')}
+                >
+                  <Settings className="h-5 w-5 mr-3" />
+                  <div>
+                    <div className="font-semibold">Settings</div>
+                    <div className="text-xs text-gray-500">System Configuration</div>
+                  </div>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-left p-3 h-auto hover:bg-gray-50 rounded-lg"
+                  onClick={() => router.push('/admin/security')}
+                >
+                  <Shield className="h-5 w-5 mr-3" />
+                  <div>
+                    <div className="font-semibold">Security</div>
+                    <div className="text-xs text-gray-500">Access Control</div>
+                  </div>
+                </Button>
               </div>
+            </nav>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Overview</h2>
+              <p className="text-gray-600">Welcome back! Here's what's happening with your employee verification system.</p>
             </div>
 
-            {/* Employee Report Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <Card className="overflow-hidden shadow-2xl border-0 bg-white">
-                <div className={`h-3 ${employee.status === 'ACTIVE' ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-red-500 to-red-600'}`} />
-                <CardContent className="p-8">
-                  <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Left Column - Profile Picture and QR Code */}
-                    <div className="flex flex-col items-center space-y-6">
-                      {/* Profile Picture */}
-                      <div className="flex-shrink-0">
-                        <div className="w-40 h-40 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center overflow-hidden shadow-xl border-4 border-white relative">
-                          {employee.profilePicture ? (
-                            <img 
-                              src={employee.profilePicture} 
-                              alt={employee.fullName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User className="w-20 h-20 text-gray-400" />
-                          )}
-                        </div>
-                        {/* Employee Name and Verified Badge Below Profile */}
-                        <div className="text-center mt-4">
-                          <h3 className="text-xl font-bold text-gray-900 flex items-center justify-center gap-2">
-                            {employee.fullName}
-                            {employee.status === 'ACTIVE' && (
-                              <div className="inline-flex items-center justify-center w-5 h-5 bg-green-500 rounded-full shadow-lg">
-                                <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                              </div>
-                            )}
-                          </h3>
-                        </div>
-                      </div>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card className="border-0 shadow-lg bg-white">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Total Employees</CardTitle>
+                  <Users className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-gray-900">{stats.totalEmployees}</div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {stats.activeEmployees} active
+                  </p>
+                </CardContent>
+              </Card>
 
-                      {/* QR Code */}
-                      <div className="text-center">
-                        <p className="text-gray-500 font-medium mb-2">Employee ID QR Code</p>
-                        <QRCodeGenerator 
-                          value={`${typeof window !== 'undefined' ? window.location.origin : 'https://primeverification.vercel.app'}/verify?employee=${employee.employeeId}`}
-                          size={150}
-                          className="p-2 bg-white rounded-lg shadow-md"
-                        />
-                        <p className="text-gray-400 mt-2 text-sm">Scan for verification</p>
-                        
-                        {/* WhatsApp Button */}
-                        {employee.whatsappNumber && (
-                          <Button
-                            onClick={() => {
-                              const message = `Hello, I'm verifying ${employee.fullName} (${employee.employeeId}) from Prime Steel. Please confirm this employee's status.`;
-                              const whatsappUrl = `https://wa.me/${employee.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
-                              window.open(whatsappUrl, '_blank');
-                            }}
-                            className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg shadow-md w-full mt-4 text-sm"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                            Chat with Salesman
-                          </Button>
-                        )}
+              <Card className="border-0 shadow-lg bg-white">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Active Employees</CardTitle>
+                  <Users className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-gray-900">{stats.activeEmployees}</div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {stats.totalEmployees > 0 ? Math.round((stats.activeEmployees / stats.totalEmployees) * 100) : 0}% of total
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-white">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Verifications Today</CardTitle>
+                  <Activity className="h-4 w-4 text-purple-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-gray-900">{stats.verificationsToday}</div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {stats.totalVerifications} total verifications
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-white">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">System Status</CardTitle>
+                  <Shield className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">Online</div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    All systems operational
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-lg bg-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-blue-600" />
+                    Quick Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button
+                    className="w-full justify-start p-4 h-auto bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                    onClick={() => router.push('/admin/employees?action=add')}
+                  >
+                    <div className="flex items-center">
+                      <Users className="h-5 w-5 mr-3" />
+                      <div className="text-left">
+                        <div className="font-semibold">Add New Employee</div>
+                        <div className="text-sm text-gray-600">Create a new employee profile</div>
                       </div>
                     </div>
-
-                    {/* Right Column - Employee Details */}
-                    <div className="flex-1 space-y-6">
-                      <div className="flex justify-end">
-                        <div className="text-right">
-                          <Badge className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-semibold rounded-lg">
-                            {employee.employeeId}
-                          </Badge>
-                        </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start p-4 h-auto border-purple-200 text-purple-700 hover:bg-purple-50"
+                    onClick={() => router.push('/admin/logs')}
+                  >
+                    <div className="flex items-center">
+                      <Activity className="h-5 w-5 mr-3" />
+                      <div className="text-left">
+                        <div className="font-semibold">View Verification Logs</div>
+                        <div className="text-sm text-gray-600">Monitor verification activity</div>
                       </div>
+                    </div>
+                  </Button>
+                </CardContent>
+              </Card>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                          <Building className="w-5 h-5 text-blue-600" />
-                          <div>
-                            <p className="text-gray-500 font-medium">Department</p>
-                            <p className="text-sm font-semibold text-gray-900">{employee.department}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                          <Calendar className="w-5 h-5 text-purple-600" />
-                          <div>
-                            <p className="text-gray-500 font-medium">Date of Birth</p>
-                            <p className="text-sm font-semibold text-gray-900">{formatDate(employee.dateOfBirth)}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                          <Phone className="w-5 h-5 text-green-600" />
-                          <div>
-                            <p className="text-gray-500 font-medium">Phone Number</p>
-                            <p className="text-sm font-semibold text-gray-900">{employee.phoneNumber}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                          <Mail className="w-5 h-5 text-blue-600" />
-                          <div>
-                            <p className="text-gray-500 font-medium">Email</p>
-                            <p className="text-sm font-semibold text-gray-900">{employee.email || 'Not Available'}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                          <Droplets className="w-5 h-5 text-red-600" />
-                          <div>
-                            <p className="text-gray-500 font-medium">Blood Group</p>
-                            <p className="text-sm font-semibold text-gray-900">{employee.bloodGroup}</p>
-                          </div>
-                        </div>
-
-                        {employee.region && (
-                          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                            <MapPin className="w-5 h-5 text-indigo-600" />
-                            <div>
-                              <p className="text-gray-500 font-medium">Region</p>
-                              <p className="text-sm font-semibold text-gray-900">{employee.region}</p>
-                            </div>
-                          </div>
-                        )}
+              <Card className="border-0 shadow-lg bg-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-green-600" />
+                    Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">System running normally</p>
+                        <p className="text-xs text-gray-500">2 minutes ago</p>
                       </div>
-
-                      {/* Verification Notice */}
-                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
-                          <div>
-                            <h4 className="text-sm font-semibold text-blue-900 mb-1">Official Verification Notice</h4>
-                            <p className="text-blue-800 text-sm leading-relaxed">
-                              This employee is officially verified by {companyName}. For any inquiries or further verification, 
-                              please contact our HR department at <span className="text-sm font-semibold">{companyPhone}</span>. 
-                              This verification is valid until the expiry date mentioned above.
-                            </p>
-                          </div>
-                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{stats.verificationsToday} verifications today</p>
+                        <p className="text-xs text-gray-500">Last updated: Just now</p>
                       </div>
-
-                      <div className="border-t pt-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="p-4 bg-blue-50 rounded-lg">
-                            <p className="text-blue-600 font-medium">Issue Date</p>
-                            <p className="text-sm font-semibold text-blue-900">{formatDate(employee.issueDate)}</p>
-                          </div>
-                          <div className="p-4 bg-orange-50 rounded-lg">
-                            <p className="text-orange-600 font-medium">Expiry Date</p>
-                            <p className="text-sm font-semibold text-orange-900">{formatDate(employee.expiryDate)}</p>
-                          </div>
-                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{stats.activeEmployees} active employees</p>
+                        <p className="text-xs text-gray-500">Last updated: Just now</p>
                       </div>
-
-                      {employee.status === 'INACTIVE' && (
-                        <Alert className="mt-6 border-l-4 border-red-500 bg-red-50" variant="destructive">
-                          <AlertDescription className="text-red-700 font-medium text-lg">
-                            ⚠️ Inactive Employee – Contact HR Department
-                          </AlertDescription>
-                        </Alert>
-                      )}
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
-
-            {/* Navigation Buttons */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-              <div className="flex justify-center gap-4">
-                <Button
-                  onClick={handleSearchAgain}
-                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg shadow-lg"
-                >
-                  <Search className="w-4 h-4" />
-                  Search Again
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          // Search Interface
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight inline-flex items-center gap-3">
-                Official Employee Verification Portal
-              </h2>
-              <p className="mt-3 text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
-                Secure, reliable, and real-time employee verification system.
-              </p>
-            </div>
-
-            {/* Search Section */}
-            <Card className="mb-12 shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
-                <CardTitle className="flex items-center gap-3 text-2xl font-bold text-black">
-                  <Search className="w-7 h-7 text-blue-600" />
-                  Employee Verification
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-8">
-                <Tabs defaultValue="manual" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 p-1 rounded-lg">
-                    <TabsTrigger value="manual" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md py-3 font-semibold">
-                      Manual Entry
-                    </TabsTrigger>
-                    <TabsTrigger value="camera" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md py-3 font-semibold">
-                      Camera Scan
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="manual" className="space-y-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="employeeId" className="text-lg font-semibold text-gray-700">
-                        Employee ID
-                      </Label>
-                      <div className="flex gap-3">
-                        <Input
-                          id="employeeId"
-                          placeholder="Enter Employee ID (e.g., EMP001)"
-                          value={employeeId}
-                          onChange={(e) => setEmployeeId(e.target.value.toUpperCase())}
-                          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                          className="text-lg py-3 px-4 border-2 border-gray-200 focus:border-blue-400 rounded-lg"
-                        />
-                        <Button 
-                          onClick={handleSearch} 
-                          disabled={loading}
-                          className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg"
-                        >
-                          {loading ? 'Verifying Employee...' : 'Search'}
-                        </Button>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="camera" className="space-y-6">
-                    <div className="space-y-4">
-                      {!cameraActive ? (
-                        <div className="text-center space-y-4">
-                          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                            <Camera className="w-10 h-10 text-blue-600" />
-                          </div>
-                          <p className="text-gray-600 text-lg">
-                            Click the button below to scan QR code with your camera
-                          </p>
-                          <Button 
-                            onClick={() => setCameraActive(true)}
-                            className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg shadow-lg"
-                          >
-                            <Camera className="w-5 h-5 mr-2" />
-                            Start Camera Scan
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="bg-black rounded-xl overflow-hidden shadow-2xl">
-                            <div className="w-full h-[400px]">
-                              <QRScanner 
-                                onScan={handleQRScan}
-                                onError={handleScannerError}
-                              />
-                            </div>
-                          </div>
-                          <div className="text-center space-y-2">
-                            <p className="text-sm text-gray-600">
-                              Position the QR code within the frame to scan
-                            </p>
-                            <div className="flex justify-center gap-2">
-                              <Button 
-                                onClick={() => setCameraActive(false)}
-                                variant="outline"
-                                className="px-6 py-2 border-2 border-red-300 text-red-600 hover:bg-red-50 rounded-lg"
-                              >
-                                Stop Camera
-                              </Button>
-                              <Button 
-                                onClick={() => {
-                                  setCameraActive(false)
-                                  setTimeout(() => setCameraActive(true), 500)
-                                }}
-                                variant="outline"
-                                className="px-6 py-2 border-2 border-blue-300 text-blue-600 hover:bg-blue-50 rounded-lg"
-                              >
-                                Retry Camera
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-
-                {error && (
-                  <Alert className="mt-6 border-l-4 border-red-500 bg-red-50" variant="destructive">
-                    <AlertDescription className="text-red-700 font-medium">{error}</AlertDescription>
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* Support Section */}
-            <div className="text-center mt-8">
-              <div className="inline-flex items-center gap-3 bg-white rounded-full px-6 py-3 shadow-lg border border-blue-100">
-                <MessageCircle className="w-5 h-5 text-blue-600" />
-                <span className="text-gray-700 font-medium">Need help with verification?</span>
-                <span className="text-gray-500 text-sm">Contact support@primesteel.com</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-slate-800 to-slate-900 text-white mt-20 border-t border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <p className="text-gray-400 text-sm">
-              © 2025 {companyName}. All rights reserved. | Official Employee Verification System
-            </p>
-            <p className="text-gray-500 text-xs mt-2">
-              This system is for official use only. Unauthorized access is prohibited.
-            </p>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   )
 }
