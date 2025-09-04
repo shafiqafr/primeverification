@@ -253,8 +253,8 @@ export default function Home() {
                       <div className="text-center">
                         <p className="text-gray-500 font-medium mb-2">Employee ID QR Code</p>
                         <QRCodeGenerator 
-                          value={`https://primesteel.com/verify?employee=${employee.employeeId}`}
-                          size={150}
+value={`${typeof window !== 'undefined' ? window.location.origin : 'https://primeverification.vercel.app'}/verify?employee=${employee.employeeId}`}
+size={150}
                           className="p-2 bg-white rounded-lg shadow-md"
                         />
                         <p className="text-gray-400 mt-2 text-sm">Scan for verification</p>
