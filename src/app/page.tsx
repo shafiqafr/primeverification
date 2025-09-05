@@ -39,6 +39,18 @@ interface CompanySettings {
   companyLogo?: string | null;
 }
 
+// ✅ یہ فنکشن پرانی سیٹنگز کی فِلکرِنگ روکے گا
+const getInitialSettings = () => {
+  if (typeof window === 'undefined') return null;
+  const el = document.getElementById('initial-settings');
+  if (!el) return null;
+  try {
+    return JSON.parse(el.getAttribute('data-settings') || '{}');
+  } catch (e) {
+    return null;
+  }
+};
+
 function HomePageContent() {
   const searchParams = useSearchParams();
   const [employeeId, setEmployeeId] = useState('');
@@ -48,13 +60,25 @@ function HomePageContent() {
   const [cameraActive, setCameraActive] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
+  
+  // ✅ یہاں ڈیفالٹ سیٹنگز نہیں ہیں — ہم فوری سیٹنگز لوڈ کریں گے
   const [companySettings, setCompanySettings] = useState<CompanySettings>({
-    companyName: 'Prime Steel Industries',
-    companyAddress: 'Jamrud Road, Near Saleem Check Post, Khyber 2500',
-    companyPhone: '091-XXXXXXX',
-    companyEmail: 'support@primesteel.com',
+    companyName: '',
+    companyAddress: '',
+    companyPhone: '',
+    companyEmail: '',
     companyLogo: null,
   });
+
+  // ✅ سیٹنگز فوری لوڈ ہوں گی
+  useEffect(() => {
+    const initial = getInitialSettings();
+    if (initial) {
+      setCompanySettings(initial);
+    } else {
+      fetchCompanySettings(); // اگر نہ ملے تو API سے لے
+    }
+  }, []);
 
   useEffect(() => {
     const employeeParam = searchParams.get('employee');
@@ -65,10 +89,6 @@ function HomePageContent() {
       });
     }
   }, [searchParams]);
-
-  useEffect(() => {
-    fetchCompanySettings();
-  }, []);
 
   const fetchCompanySettings = async () => {
     try {
@@ -115,19 +135,19 @@ function HomePageContent() {
     }
   };
 
-  const handleQRScan = async ( string) => {
+  const handleQRScan = async (data: string) => {
     setCameraActive(false);
     try {
       let employeeId = data;
       if (data.includes('employee=')) {
-        const urlParams = new URLSearchParams(data.split('?')[1]);
-        employeeId = urlParams.get('employee') || data;
+        const url = new URL(data);
+        employeeId = url.searchParams.get('employee') || data;
       }
       employeeId = employeeId.toUpperCase().replace(/[^A-Z0-9]/g, '');
       setEmployeeId(employeeId);
       await handleSearchById(employeeId);
     } catch (err) {
-      setError('Invalid QR code format');
+      setError('Invalid QR code or employee not found');
     }
   };
 
@@ -148,7 +168,6 @@ function HomePageContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
       <header className="bg-white shadow-lg border-b border-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
@@ -503,7 +522,7 @@ function HomePageContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<div>Loading application...</div>}>
+    <Suspense fallback={<div>Loading...</div>}>
       <HomePageContent />
     </Suspense>
   );
