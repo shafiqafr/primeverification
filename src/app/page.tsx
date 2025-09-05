@@ -168,6 +168,7 @@ function HomePageContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      {/* Header */}
       <header className="bg-white shadow-lg border-b border-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
@@ -236,9 +237,10 @@ function HomePageContent() {
         </div>
       </header>
 
-      <main className="flex-1">
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col">
         {showReport && employee ? (
-          <div className="min-h-screen">
+          <div className="min-h-screen flex flex-col">
             <div className="bg-white shadow-sm border-b">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="flex items-center justify-between">
@@ -266,8 +268,8 @@ function HomePageContent() {
               </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <Card className="overflow-hidden shadow-2xl border-0 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+              <Card className="overflow-hidden shadow-2xl border-0 bg-white flex-1">
                 <div className={`h-3 ${employee.status === 'ACTIVE' ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-red-500 to-red-600'}`} />
                 <CardContent className="p-8">
                   <div className="flex flex-col lg:flex-row gap-8">
@@ -436,7 +438,7 @@ function HomePageContent() {
             </div>
           </div>
         ) : (
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight inline-flex items-center gap-3">
                 Official Employee Verification Portal
@@ -504,7 +506,8 @@ function HomePageContent() {
         )}
       </main>
 
-      <footer className="bg-gradient-to-r from-slate-800 to-slate-900 text-white mt-20 border-t border-slate-700">
+      {/* Footer */}
+      <footer className="bg-gradient-to-r from-slate-800 to-slate-900 text-white mt-auto border-t border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <p className="text-gray-400 text-sm">
