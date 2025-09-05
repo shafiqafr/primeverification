@@ -504,18 +504,7 @@ function HomePageContent() {
         )}
       </main>
 
-      <footer className="bg-gradient-to-r from-slate-800 to-slate-900 text-white mt-20 border-t border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <p className="text-gray-400 text-sm">
-              © 2025 {companySettings.companyName}. All rights reserved. | Official Employee Verification System
-            </p>
-            <p className="text-gray-500 text-xs mt-2">
-              This system is for official use only. Unauthorized access is prohibited.
-            </p>
-          </div>
-        </div>
-      </footer>
+     
     </div>
   );
 }
@@ -527,3 +516,16 @@ export default function Home() {
     </Suspense>
   );
 }
+
+ <footer className="bg-gradient-to-r from-slate-800 to-slate-900 text-white mt-20 border-t border-slate-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <p className="text-gray-400 text-sm">
+              © 2025 {companySettings.companyName}. All rights reserved. | Official Employee Verification System
+            </p>
+            <p className="text-gray-500 text-xs mt-2">
+              This system is for official use only. Unauthorized access is prohibited.
+            </p>
+          </div>
+        </div>
+      </footer>
