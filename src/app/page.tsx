@@ -1,4 +1,23 @@
 'use client'
+const getInitialSettings = () => {
+  if (typeof window === 'undefined') return null;
+  const el = document.getElementById('initial-settings');
+  if (!el) return null;
+  try {
+    return JSON.parse(el.getAttribute('data-settings') || '{}');
+  } catch (e) {
+    return null;
+  }
+};
+
+useEffect(() => {
+  const initial = getInitialSettings();
+  if (initial) {
+    setCompanySettings(initial);
+  } else {
+    fetchCompanySettings(); // fallback
+  }
+}, [])
 
 export const dynamic = 'force-dynamic';
 
