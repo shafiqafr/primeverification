@@ -3,13 +3,12 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/providers";
 
-// یہ فنکشن سیٹنگز کو سرور سائیڈ لوڈ کرے گا
 async function getInitialSettings() {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://primeverification.vercel.app'}/api/public/settings`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store', // ہر بار تازہ ڈیٹا لائیں
+      cache: 'no-store',
     });
 
     if (res.ok) {
@@ -20,7 +19,6 @@ async function getInitialSettings() {
     console.error('Failed to load settings in layout:', error);
   }
 
-  // ڈیفالٹ سیٹنگز
   return {
     companyName: 'Prime Steel Industries',
     companyLogo: null,
@@ -33,13 +31,6 @@ async function getInitialSettings() {
 export const metadata: Metadata = {
   title: "Prime Steel - Employee Verification System",
   description: "Official employee verification portal for Prime Steel. Verify employee credentials with confidence.",
-  keywords: ["Prime Steel", "Employee Verification", "QR Code", "Authentication"],
-  authors: [{ name: "Prime Steel" }],
-  openGraph: {
-    title: "Prime Steel - Employee Verification System",
-    description: "Official employee verification portal for Prime Steel",
-    type: "website",
-  },
 };
 
 export default async function RootLayout({
@@ -52,7 +43,6 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased bg-background text-foreground">
-        {/* چھپا ہوا ٹیگ — پیج کو سیٹنگز فوری دستیاب ہوں گی */}
         <div 
           id="initial-settings" 
           style={{ display: 'none' }} 
