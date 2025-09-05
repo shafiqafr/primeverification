@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Camera, RefreshCw, AlertTriangle } from 'lucide-react'
+import { Camera, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import jsqr from 'jsqr'
 
 interface QRScannerProps {
-  onScan: (data: string) => void
+  onScan: ( string) => void
   onError: (error: string) => void
 }
 
@@ -28,16 +28,11 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       // Stop any existing stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop())
-        streamRef.current = null
       }
 
-      // Always try to use back camera
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: 'environment', // ہمیشہ بیک کیمرہ
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 }
-        }
+      // Try to access back camera
+      const constraints = {
+        video: { facingMode: 'environment' }
       }
 
       let stream: MediaStream
@@ -45,11 +40,8 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       try {
         stream = await navigator.mediaDevices.getUserMedia(constraints)
       } catch (err) {
-        console.log('Back camera failed, trying any camera...')
         // Fallback to any camera
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 640 }, height: { ideal: 480 } }
-        })
+        stream = await navigator.mediaDevices.getUserMedia({ video: true })
       }
 
       streamRef.current = stream
@@ -58,10 +50,9 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         videoRef.current.srcObject = stream
         videoRef.current.setAttribute('playsinline', 'true')
         videoRef.current.muted = true
-        
+
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play().catch(err => {
-            console.error('Video play error:', err)
             setError('Could not play video stream')
             onError('Could not play video stream')
           })
@@ -72,7 +63,6 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       setIsScanning(true)
       startScanning()
     } catch (err: any) {
-      console.error('Camera error:', err)
       const message = err.message || 'Failed to access camera'
       setError(message)
       onError(message)
@@ -90,6 +80,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
 
       if (!video || !canvas || !ctx || video.readyState !== 4) return
 
+      // Match video dimensions
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
@@ -102,12 +93,12 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         })
 
         if (code) {
-          console.log('QR Code detected:', code.data)
-          onScan(code.data)
+          console.log('✅ QR Code detected:', code.data)
+          onScan(code.data) // صرف اصل QR کوڈ پر کال ہو
           stopScanning()
         }
       } catch (err) {
-        console.error('QR detection error:', err)
+        console.error('❌ QR detection error:', err)
       }
     }, 300)
   }
@@ -152,7 +143,6 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10">
           <div className="text-white text-center p-4 max-w-sm">
-            <AlertTriangle className="w-12 h-12 mx-auto mb-2 text-red-400" />
             <Alert className="mb-4 border-red-500 bg-red-900/20">
               <AlertDescription className="text-white text-sm">{error}</AlertDescription>
             </Alert>
