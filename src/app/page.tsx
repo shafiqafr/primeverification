@@ -296,10 +296,4 @@ return (
       </div>
     </header>
 
-export default function Home() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <HomePageContent />
-    </Suspense>
-  );
-}
+
