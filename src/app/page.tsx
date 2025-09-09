@@ -169,7 +169,7 @@ function HomePageContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
       {/* Header */}
-      <header bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50>
+      <header className="bg-white shadow-lg border-b border-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center">
@@ -332,93 +332,58 @@ function HomePageContent() {
                           </Badge>
                         </div>
                       </div>
-   <div className="lg:w-2/3 p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-start">
-                          <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                            <Building className="h-5 w-5 text-blue-600" />
-                          </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                          <Building className="w-5 h-5 text-blue-600" />
                           <div>
-                            <p className="text-sm text-gray-500">Department</p>
-                            <p className="font-semibold text-gray-900">{employee.department}</p>
+                            <p className="text-gray-500 font-medium">Department</p>
+                            <p className="text-sm font-semibold text-gray-900">{employee.department}</p>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-start">
-                          <div className="bg-purple-100 p-2 rounded-lg mr-3">
-                            <Calendar className="h-5 w-5 text-purple-600" />
-                          </div>
+
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                          <Calendar className="w-5 h-5 text-purple-600" />
                           <div>
-                            <p className="text-sm text-gray-500">Date of Birth</p>
-                            <p className="font-semibold text-gray-900">{formatDate(employee.dateOfBirth)}</p>
+                            <p className="text-gray-500 font-medium">Date of Birth</p>
+                            <p className="text-sm font-semibold text-gray-900">{formatDate(employee.dateOfBirth)}</p>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-start">
-                          <div className="bg-green-100 p-2 rounded-lg mr-3">
-                            <Phone className="h-5 w-5 text-green-600" />
-                          </div>
+
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                          <Phone className="w-5 h-5 text-green-600" />
                           <div>
-                            <p className="text-sm text-gray-500">Phone Number</p>
-                            <p className="font-semibold text-gray-900">{employee.phoneNumber}</p>
+                            <p className="text-gray-500 font-medium">Phone Number</p>
+                            <p className="text-sm font-semibold text-gray-900">{employee.phoneNumber}</p>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-start">
-                          <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                            <Mail className="h-5 w-5 text-blue-600" />
-                          </div>
+
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                          <Mail className="w-5 h-5 text-blue-600" />
                           <div>
-                            <p className="text-sm text-gray-500">Email</p>
-                            <p className="font-semibold text-gray-900">{employee.email || 'Not Available'}</p>
+                            <p className="text-gray-500 font-medium">Email</p>
+                            <p className="text-sm font-semibold text-gray-900">{employee.email || 'Not Available'}</p>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-start">
-                          <div className="bg-red-100 p-2 rounded-lg mr-3">
-                            <Droplets className="h-5 w-5 text-red-600" />
-                          </div>
+
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                          <Droplets className="w-5 h-5 text-red-600" />
                           <div>
-                            <p className="text-sm text-gray-500">Blood Group</p>
-                            <p className="font-semibold text-gray-900">{employee.bloodGroup}</p>
+                            <p className="text-gray-500 font-medium">Blood Group</p>
+                            <p className="text-sm font-semibold text-gray-900">{employee.bloodGroup}</p>
                           </div>
                         </div>
-                      </div>
-                      
-                      {employee.region && (
-                        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="flex items-start">
-                            <div className="bg-indigo-100 p-2 rounded-lg mr-3">
-                              <MapPin className="h-5 w-5 text-indigo-600" />
-                            </div>
+
+                        {employee.region && (
+                          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                            <MapPin className="w-5 h-5 text-indigo-600" />
                             <div>
-                              <p className="text-sm text-gray-500">Region</p>
-                              <p className="font-semibold text-gray-900">{employee.region}</p>
+                              <p className="text-gray-500 font-medium">Region</p>
+                              <p className="text-sm font-semibold text-gray-900">{employee.region}</p>
                             </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
-                        <p className="text-sm text-blue-600 font-medium">Issue Date</p>
-                        <p className="font-semibold text-blue-900">{formatDate(employee.issueDate)}</p>
+                        )}
                       </div>
-                      <div className="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
-                        <p className="text-sm text-orange-600 font-medium">Expiry Date</p>
-                        <p className="font-semibold text-orange-900">{formatDate(employee.expiryDate)}</p>
-                      </div>
-                    </div>
 
                       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
                         <div className="flex items-start gap-3">
