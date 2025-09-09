@@ -333,63 +333,57 @@ function HomePageContent() {
                         </div>
                       </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-  {/* Department */}
-  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-    <Building className="w-5 h-5 text-blue-600" />
-    <div>
-      <p className="text-gray-500 font-medium">Department</p>
-      <p className="text-sm font-semibold text-gray-900">{employee.department}</p>
-    </div>
-  </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                          <Building className="w-5 h-5 text-blue-600" />
+                          <div>
+                            <p className="text-gray-500 font-medium">Department</p>
+                            <p className="text-sm font-semibold text-gray-900">{employee.department}</p>
+                          </div>
+                        </div>
 
-  {/* Date of Birth */}
-  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-    <Calendar className="w-5 h-5 text-purple-600" />
-    <div>
-      <p className="text-gray-500 font-medium">Date of Birth</p>
-      <p className="text-sm font-semibold text-gray-900">{formatDate(employee.dateOfBirth)}</p>
-    </div>
-  </div>
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                          <Calendar className="w-5 h-5 text-purple-600" />
+                          <div>
+                            <p className="text-gray-500 font-medium">Date of Birth</p>
+                            <p className="text-sm font-semibold text-gray-900">{formatDate(employee.dateOfBirth)}</p>
+                          </div>
+                        </div>
 
-  {/* Phone Number */}
-  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-    <Phone className="w-5 h-5 text-green-600" />
-    <div>
-      <p className="text-gray-500 font-medium">Phone Number</p>
-      <p className="text-sm font-semibold text-gray-900">{employee.phoneNumber}</p>
-    </div>
-  </div>
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                          <Phone className="w-5 h-5 text-green-600" />
+                          <div>
+                            <p className="text-gray-500 font-medium">Phone Number</p>
+                            <p className="text-sm font-semibold text-gray-900">{employee.phoneNumber}</p>
+                          </div>
+                        </div>
 
-  {/* Email */}
-  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-    <Mail className="w-5 h-5 text-blue-600" />
-    <div>
-      <p className="text-gray-500 font-medium">Email</p>
-      <p className="text-sm font-semibold text-gray-900">{employee.email || 'Not Available'}</p>
-    </div>
-  </div>
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                          <Mail className="w-5 h-5 text-blue-600" />
+                          <div>
+                            <p className="text-gray-500 font-medium">Email</p>
+                            <p className="text-sm font-semibold text-gray-900">{employee.email || 'Not Available'}</p>
+                          </div>
+                        </div>
 
-  {/* Blood Group */}
-  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-    <Droplets className="w-5 h-5 text-red-600" />
-    <div>
-      <p className="text-gray-500 font-medium">Blood Group</p>
-      <p className="text-sm font-semibold text-gray-900">{employee.bloodGroup}</p>
-    </div>
-  </div>
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                          <Droplets className="w-5 h-5 text-red-600" />
+                          <div>
+                            <p className="text-gray-500 font-medium">Blood Group</p>
+                            <p className="text-sm font-semibold text-gray-900">{employee.bloodGroup}</p>
+                          </div>
+                        </div>
 
-  {/* Region (if exists) */}
-  {employee.region && (
-    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-      <MapPin className="w-5 h-5 text-indigo-600" />
-      <div>
-        <p className="text-gray-500 font-medium">Region</p>
-        <p className="text-sm font-semibold text-gray-900">{employee.region}</p>
-      </div>
-    </div>
-  )}
-</div>
+                        {employee.region && (
+                          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                            <MapPin className="w-5 h-5 text-indigo-600" />
+                            <div>
+                              <p className="text-gray-500 font-medium">Region</p>
+                              <p className="text-sm font-semibold text-gray-900">{employee.region}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
                       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
                         <div className="flex items-start gap-3">
