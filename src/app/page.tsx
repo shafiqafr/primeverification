@@ -39,17 +39,15 @@ interface CompanySettings {
   companyLogo?: string | null;
 }
 
-// ✅ یہ فنکشن پرانی سیٹنگز کی فِلکرِنگ روکے گا
-const getInitialSettings = () => {
-  if (typeof window === 'undefined') return null;
-  const el = document.getElementById('initial-settings');
-  if (!el) return null;
-  try {
-    return JSON.parse(el.getAttribute('data-settings') || '{}');
-  } catch (e) {
-    return null;
-  }
-};
+// ✅ لوڈنگ لائنیں (فیس بک جیسی)
+function Skeleton({ className = '', ...props }: { className?: string; [key: string]: any }) {
+  return (
+    <div
+      className={`animate-pulse rounded-md bg-gray-200 ${className}`}
+      {...props}
+    />
+  );
+}
 
 function HomePageContent() {
   const searchParams = useSearchParams();
@@ -61,23 +59,12 @@ function HomePageContent() {
   const [showReport, setShowReport] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
   
-  // ✅ یہاں ڈیفالٹ سیٹنگز نہیں ہیں — ہم فوری سیٹنگز لوڈ کریں گے
-  const [companySettings, setCompanySettings] = useState<CompanySettings>({
-    companyName: '',
-    companyAddress: '',
-    companyPhone: '',
-    companyEmail: '',
-    companyLogo: null,
-  });
+  // ✅ صرف تب ہی ڈیٹا دکھائیں جب ڈیٹا بیس سے آئے
+  const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
 
-  // ✅ سیٹنگز فوری لوڈ ہوں گی
+  // ✅ صرف API سے ڈیٹا لوڈ کریں
   useEffect(() => {
-    const initial = getInitialSettings();
-    if (initial) {
-      setCompanySettings(initial);
-    } else {
-      fetchCompanySettings(); // اگر نہ ملے تو API سے لے
-    }
+    fetchCompanySettings();
   }, []);
 
   useEffect(() => {
@@ -96,8 +83,11 @@ function HomePageContent() {
       if (response.ok) {
         const data = await response.json();
         setCompanySettings(data.settings);
+      } else {
+        setCompanySettings(null);
       }
     } catch (error) {
+      setCompanySettings(null);
       console.error('Error fetching company settings:', error);
     }
   };
@@ -174,62 +164,82 @@ function HomePageContent() {
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                {companySettings.companyLogo ? (
-                  <img 
-                    src={companySettings.companyLogo} 
-                    alt="Company Logo" 
-                    className="w-10 h-10 rounded-lg object-cover shadow-md"
-                  />
+                {companySettings ? (
+                  companySettings.companyLogo ? (
+                    <img 
+                      src={companySettings.companyLogo} 
+                      alt="Company Logo" 
+                      className="w-10 h-10 rounded-lg object-cover shadow-md"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center shadow-md">
+                      <span className="text-white font-bold text-lg">P</span>
+                    </div>
+                  )
                 ) : (
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center shadow-md">
-                    <span className="text-white font-bold text-lg">P</span>
-                  </div>
+                  <Skeleton className="w-10 h-10 rounded-lg" />
                 )}
               </div>
               <div className="ml-3">
-                <h1 className="text-xl font-bold text-blue-800">
-                  {companySettings.companyName}
-                </h1>
+                {companySettings ? (
+                  <h1 className="text-xl font-bold text-blue-800">
+                    {companySettings.companyName}
+                  </h1>
+                ) : (
+                  <Skeleton className="h-6 w-48 bg-gray-300 rounded" />
+                )}
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowContactInfo(!showContactInfo)}
-              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors"
-            >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Contact Info
-              {showContactInfo ? (
-                <ChevronUp className="w-4 h-4 ml-1" />
+            <div>
+              {companySettings ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowContactInfo(!showContactInfo)}
+                  className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Contact Info
+                </Button>
               ) : (
-                <ChevronDown className="w-4 h-4 ml-1" />
+                <Skeleton className="h-10 w-32 rounded-lg bg-gray-300" />
               )}
-            </Button>
+            </div>
           </div>
+
           {showContactInfo && (
             <div className="pb-4">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="flex items-center text-sm text-gray-700">
-                    <svg className="w-4 h-4 mr-2 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    <span className="font-medium truncate">{companySettings.companyAddress}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-700">
-                    <svg className="w-4 h-4 mr-2 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                    </svg>
-                    <span className="font-medium">{companySettings.companyPhone}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-700">
-                    <svg className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                    <span className="font-medium truncate">{companySettings.companyEmail}</span>
-                  </div>
+                  {companySettings ? (
+                    <>
+                      <div className="flex items-center text-sm text-gray-700">
+                        <svg className="w-4 h-4 mr-2 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span className="font-medium truncate">{companySettings.companyAddress}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-700">
+                        <svg className="w-4 h-4 mr-2 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                        </svg>
+                        <span className="font-medium">{companySettings.companyPhone}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-700">
+                        <svg className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <span className="font-medium truncate">{companySettings.companyEmail}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Skeleton className="h-5 w-full rounded" />
+                      <Skeleton className="h-5 w-full rounded" />
+                      <Skeleton className="h-5 w-full rounded" />
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -318,7 +328,7 @@ function HomePageContent() {
                             className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg shadow-md w-full mt-4 text-sm"
                           >
                             <MessageCircle className="w-4 h-4" />
-                          Contact on WhatsApp
+                            Chat with Salesman
                           </Button>
                         )}
                       </div>
@@ -391,8 +401,8 @@ function HomePageContent() {
                           <div>
                             <h4 className="text-sm font-semibold text-blue-900 mb-1">Official Verification Notice</h4>
                             <p className="text-blue-800 text-sm leading-relaxed">
-                              This employee is officially verified by {companySettings.companyName}. For any inquiries or further verification, 
-                              please contact our HR department at <span className="text-sm font-semibold">{companySettings.companyPhone}</span>. 
+                              This employee is officially verified by {companySettings?.companyName}. For any inquiries or further verification, 
+                              please contact our HR department at <span className="text-sm font-semibold">{companySettings?.companyPhone}</span>. 
                               This verification is valid until the expiry date mentioned above.
                             </p>
                           </div>
@@ -511,7 +521,7 @@ function HomePageContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <p className="text-gray-400 text-sm">
-              © 2025 {companySettings.companyName}. All rights reserved. | Official Employee Verification System
+              © 2025 {companySettings?.companyName || 'Loading...'}. All rights reserved. | Official Employee Verification System
             </p>
             <p className="text-gray-500 text-xs mt-2">
               This system is for official use only. Unauthorized access is prohibited.
@@ -525,7 +535,7 @@ function HomePageContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>Loading application...</div>}>
       <HomePageContent />
     </Suspense>
   );
