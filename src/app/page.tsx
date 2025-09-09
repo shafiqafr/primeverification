@@ -318,7 +318,7 @@ function HomePageContent() {
                             className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg shadow-md w-full mt-4 text-sm"
                           >
                             <MessageCircle className="w-4 h-4" />
-                            Chat with Salesman
+                          Contact on WhatsApp
                           </Button>
                         )}
                       </div>
