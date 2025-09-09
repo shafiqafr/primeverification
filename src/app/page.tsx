@@ -39,15 +39,17 @@ interface CompanySettings {
   companyLogo?: string | null;
 }
 
-// ✅ لوڈنگ لائنیں (فیس بک جیسی)
-function Skeleton({ className = '', ...props }: { className?: string; [key: string]: any }) {
-  return (
-    <div
-      className={`animate-pulse rounded-md bg-gray-200 ${className}`}
-      {...props}
-    />
-  );
-}
+// ✅ صرف تب ہی ڈیٹا دکھائیں جب ڈیٹا بیس سے آئے
+const getInitialSettings = () => {
+  if (typeof window === 'undefined') return null;
+  const el = document.getElementById('initial-settings');
+  if (!el) return null;
+  try {
+    return JSON.parse(el.getAttribute('data-settings') || '{}');
+  } catch (e) {
+    return null;
+  }
+};
 
 function HomePageContent() {
   const searchParams = useSearchParams();
@@ -164,82 +166,62 @@ function HomePageContent() {
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                {companySettings ? (
-                  companySettings.companyLogo ? (
-                    <img 
-                      src={companySettings.companyLogo} 
-                      alt="Company Logo" 
-                      className="w-10 h-10 rounded-lg object-cover shadow-md"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center shadow-md">
-                      <span className="text-white font-bold text-lg">P</span>
-                    </div>
-                  )
+                {companySettings?.companyLogo ? (
+                  <img 
+                    src={companySettings.companyLogo} 
+                    alt="Company Logo" 
+                    className="w-10 h-10 rounded-lg object-cover shadow-md"
+                  />
                 ) : (
-                  <Skeleton className="w-10 h-10 rounded-lg" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center shadow-md">
+                    <span className="text-white font-bold text-lg">P</span>
+                  </div>
                 )}
               </div>
               <div className="ml-3">
-                {companySettings ? (
-                  <h1 className="text-xl font-bold text-blue-800">
-                    {companySettings.companyName}
-                  </h1>
-                ) : (
-                  <Skeleton className="h-6 w-48 bg-gray-300 rounded" />
-                )}
+                <h1 className="text-xl font-bold text-blue-800">
+                  {companySettings?.companyName || 'Loading...'}
+                </h1>
               </div>
             </div>
-            <div>
-              {companySettings ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowContactInfo(!showContactInfo)}
-                  className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Contact Info
-                </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowContactInfo(!showContactInfo)}
+              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Contact Info
+              {showContactInfo ? (
+                <ChevronUp className="w-4 h-4 ml-1" />
               ) : (
-                <Skeleton className="h-10 w-32 rounded-lg bg-gray-300" />
+                <ChevronDown className="w-4 h-4 ml-1" />
               )}
-            </div>
+            </Button>
           </div>
-
           {showContactInfo && (
             <div className="pb-4">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {companySettings ? (
-                    <>
-                      <div className="flex items-center text-sm text-gray-700">
-                        <svg className="w-4 h-4 mr-2 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                        <span className="font-medium truncate">{companySettings.companyAddress}</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-700">
-                        <svg className="w-4 h-4 mr-2 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                        </svg>
-                        <span className="font-medium">{companySettings.companyPhone}</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-700">
-                        <svg className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                        <span className="font-medium truncate">{companySettings.companyEmail}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Skeleton className="h-5 w-full rounded" />
-                      <Skeleton className="h-5 w-full rounded" />
-                      <Skeleton className="h-5 w-full rounded" />
-                    </>
-                  )}
+                  <div className="flex items-center text-sm text-gray-700">
+                    <svg className="w-4 h-4 mr-2 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span className="font-medium truncate">{companySettings?.companyAddress || 'Loading...'}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-700">
+                    <svg className="w-4 h-4 mr-2 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                    </svg>
+                    <span className="font-medium">{companySettings?.companyPhone || 'Loading...'}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-700">
+                    <svg className="w-4 h-4 mr-2 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <span className="font-medium truncate">{companySettings?.companyEmail || 'Loading...'}</span>
+                  </div>
                 </div>
               </div>
             </div>
