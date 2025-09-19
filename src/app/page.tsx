@@ -4,14 +4,13 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { QrCode, Search, User, Building, Calendar, Phone, Droplets, Badge, CheckCircle, XCircle, Camera, Shield, MessageCircle, Lock, MapPin, Mail, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, User, Building, Calendar, Phone, Droplets, Badge, CheckCircle, XCircle, Shield, MessageCircle, MapPin, Mail, Check, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import QRScanner from '@/components/QRScanner';
 import QRCodeGenerator from '@/components/QRCodeGenerator';
 
 interface Employee {
@@ -39,30 +38,17 @@ interface CompanySettings {
   companyLogo?: string | null;
 }
 
-// ✅ لوڈنگ لائنیں (فیس بک جیسی)
-function Skeleton({ className = '', ...props }: { className?: string; [key: string]: any }) {
-  return (
-    <div
-      className={`animate-pulse rounded-md bg-gray-200 ${className}`}
-      {...props}
-    />
-  );
-}
-
 function HomePageContent() {
   const searchParams = useSearchParams();
   const [employeeId, setEmployeeId] = useState('');
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [cameraActive, setCameraActive] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
-  
-  // ✅ صرف تب ہی ڈیٹا دکھائیں جب ڈیٹا بیس سے آئے
   const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
 
-  // ✅ صرف API سے ڈیٹا لوڈ کریں
+  // صرف API سے ڈیٹا لوڈ کریں
   useEffect(() => {
     fetchCompanySettings();
   }, []);
@@ -125,22 +111,6 @@ function HomePageContent() {
     }
   };
 
-  const handleQRScan = async ( string) => {
-    setCameraActive(false);
-    try {
-      let employeeId = data;
-      if (data.includes('employee=')) {
-        const url = new URL(data);
-        employeeId = url.searchParams.get('employee') || data;
-      }
-      employeeId = employeeId.toUpperCase().replace(/[^A-Z0-9]/g, '');
-      setEmployeeId(employeeId);
-      await handleSearchById(employeeId);
-    } catch (err) {
-      setError('Invalid QR code or employee not found');
-    }
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -177,36 +147,25 @@ function HomePageContent() {
                     </div>
                   )
                 ) : (
-                  <Skeleton className="w-10 h-10 rounded-lg" />
+                  <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
                 )}
               </div>
               <div className="ml-3">
-                {companySettings ? (
-                  <h1 className="text-xl font-bold text-blue-800">
-                    {companySettings.companyName}
-                  </h1>
-                ) : (
-                  <Skeleton className="h-6 w-48 bg-gray-300 rounded" />
-                )}
+                <h1 className="text-xl font-bold text-blue-800">
+                  {companySettings?.companyName || 'Loading...'}
+                </h1>
               </div>
             </div>
-            <div>
-              {companySettings ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowContactInfo(!showContactInfo)}
-                  className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Contact Info
-                </Button>
-              ) : (
-                <Skeleton className="h-10 w-32 rounded-lg bg-gray-300" />
-              )}
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowContactInfo(!showContactInfo)}
+              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Contact Info
+            </Button>
           </div>
-
           {showContactInfo && (
             <div className="pb-4">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
@@ -235,9 +194,9 @@ function HomePageContent() {
                     </>
                   ) : (
                     <>
-                      <Skeleton className="h-5 w-full rounded" />
-                      <Skeleton className="h-5 w-full rounded" />
-                      <Skeleton className="h-5 w-full rounded" />
+                      <div className="h-5 bg-gray-200 rounded animate-pulse w-full"></div>
+                      <div className="h-5 bg-gray-200 rounded animate-pulse w-full"></div>
+                      <div className="h-5 bg-gray-200 rounded animate-pulse w-full"></div>
                     </>
                   )}
                 </div>
@@ -507,7 +466,12 @@ function HomePageContent() {
                   </TabsContent>
                   
                   <TabsContent value="camera" className="space-y-6">
-                    <QRScanner onScan={handleQRScan} onError={() => {}} />
+                    <div className="flex justify-center">
+                      <div className="text-center text-gray-500">
+                        <p className="text-lg font-semibold">Camera feature coming soon</p>
+                        <p className="text-sm mt-1">Currently only manual entry is available</p>
+                      </div>
+                    </div>
                   </TabsContent>
                 </Tabs>
               </CardContent>
